@@ -8,28 +8,28 @@ use Illuminate\Support\Facades\Log;
 class BookController extends Controller
 {   
     /** Barcha kitoblar qoldiq holatini tekshirish (POST/GET POSTman orqali). */
-    public function getBookStock(Request $request)
-    {
+    public function getBookStock(Request $request){
+
         $books = Book::all();
-        $outOfStock = $books->where('stock', '<', 1);
 
-        foreach ($outOfStock as $book) {
-            Log::warning("{$book->title} kitobi tugagan!");
+        $outOfStock = [];
+        
+        foreach ($books as $book) {
+            if($book->stock == 0){
+                $outofStock[] = $book;
+                Log::warning("{$book->title} kitobi tugagan!");
+            } else {
+                Log::info('Barcha kitoblarda qoldiq mavjud.');
+            }
         }
-
-        if ($outOfStock->isEmpty()) {
-            Log::info('Barcha kitoblarda qoldiq mavjud.');
-        }
-
+        
         return response()->json([
-            'message' => $outOfStock->isEmpty()
-                ? 'Barcha kitoblarda yetarli qoldiq mavjud.'
-                : 'Baʼzi kitoblar tugagan.',
             'total_books' => $books->count(),
             'out_of_stock_count' => $outOfStock->count(),
             'out_of_stock_titles' => $outOfStock->pluck('title')->values()->all(),
         ]);
     }
+}
 
     // 1. GET - Barcha kitoblar ro'yxatini olish yoki nomi bo'yicha qidirish
     public function index(Request $request) {
