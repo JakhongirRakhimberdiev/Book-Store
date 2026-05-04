@@ -3,9 +3,34 @@
 namespace App\Http\Controllers;
 use App\Models\Book;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class BookController extends Controller
-{
+{   
+    /** Barcha kitoblar qoldiq holatini tekshirish (POST/GET POSTman orqali). */
+    public function getBookStock(Request $request)
+    {
+        $books = Book::all();
+        $outOfStock = $books->where('stock', '<', 1);
+
+        foreach ($outOfStock as $book) {
+            Log::warning("{$book->title} kitobi tugagan!");
+        }
+
+        if ($outOfStock->isEmpty()) {
+            Log::info('Barcha kitoblarda qoldiq mavjud.');
+        }
+
+        return response()->json([
+            'message' => $outOfStock->isEmpty()
+                ? 'Barcha kitoblarda yetarli qoldiq mavjud.'
+                : 'Baʼzi kitoblar tugagan.',
+            'total_books' => $books->count(),
+            'out_of_stock_count' => $outOfStock->count(),
+            'out_of_stock_titles' => $outOfStock->pluck('title')->values()->all(),
+        ]);
+    }
+
     // 1. GET - Barcha kitoblar ro'yxatini olish yoki nomi bo'yicha qidirish
     public function index(Request $request) {
         $query = Book::with('author');
@@ -73,4 +98,6 @@ class BookController extends Controller
 
         return response()->json(['message' => 'Kitob bazadan o\'chirildi']);
     }
+
+
 }
