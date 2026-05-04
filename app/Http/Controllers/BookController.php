@@ -8,12 +8,17 @@ class BookController extends Controller
 {
     // 1. GET - Barcha kitoblar ro'yxatini olish yoki nomi bo'yicha qidirish
     public function index(Request $request) {
-        $query = Book::query();
+        $query = Book::with('author');
 
-        // Qidiruv mantiqi
+        // Qidiruv mantiqi: kitob nomi yoki muallif ismi bo'yicha
         if ($request->has('search')) {
-            $query->where('title', 'ILIKE', '%' . $request->search . '%')
-              ->orWhere('author', 'ILIKE', '%' . $request->search . '%');
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'ILIKE', '%' . $search . '%')
+                  ->orWhereHas('author', function ($a) use ($search) {
+                      $a->where('name', 'ILIKE', '%' . $search . '%');
+                  });
+            });
         }
 
         $books = $query->get();
@@ -23,7 +28,11 @@ class BookController extends Controller
             return response()->json($books);
         }
 
-        return view('books.index', compact('books'));
+        // Janrlar bo'yicha umumlashgan kategoriyalar
+        // (masalan: "Roman" → Tarixiy/Psixologik roman va h.k.)
+        $genres = Book::activeCategories();
+
+        return view('books.index', compact('books', 'genres'));
     }
     
     // 2. POST - Yangi kitob qo'shish
@@ -38,7 +47,7 @@ class BookController extends Controller
     // 3. GET - Bitta kitobni ID bo'yicha ko'rish (Rasm, tavsif va h.k.)
     public function show($id)
     {
-        $book = Book::find($id);
+        $book = Book::with('author')->find($id);
         if (!$book) return response()->json(['message' => 'Kitob topilmadi'], 404);
         
         return response()->json($book);

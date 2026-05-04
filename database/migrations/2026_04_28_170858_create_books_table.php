@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('books', function (Blueprint $table) {
             $table->id();
             $table->string('title');        // Kitob nomi
-            $table->string('author');       // Muallif
+            $table->foreignId('author_id')  // Muallif (one-to-many)
+                  ->constrained('authors')
+                  ->cascadeOnDelete();
             $table->integer('price');       // Narxi
             $table->integer('stock');       // Qoldiq (soni)
             $table->string('genre');        // Janr
