@@ -15,21 +15,19 @@ class BookController extends Controller
         $outOfStock = [];
         
         foreach ($books as $book) {
-            if($book->stock == 0){
-                $outofStock[] = $book;
-                Log::warning("{$book->title} kitobi tugagan!");
-            } else {
-                Log::info('Barcha kitoblarda qoldiq mavjud.');
-            }
+            if($book->stock > 0){
+                continue;
+            }$outofStock[] = $book;
         }
         
         return response()->json([
+            'message' => $outOfStock != [] ? Log::warning("{$book->title} kitobi tugagan!") : 
+              Log::info('Barcha kitoblarda qoldiq mavjud.'),
             'total_books' => $books->count(),
             'out_of_stock_count' => $outOfStock->count(),
             'out_of_stock_titles' => $outOfStock->pluck('title')->values()->all(),
         ]);
     }
-}
 
     // 1. GET - Barcha kitoblar ro'yxatini olish yoki nomi bo'yicha qidirish
     public function index(Request $request) {
